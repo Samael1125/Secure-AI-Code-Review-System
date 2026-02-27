@@ -3,11 +3,6 @@
 An AI-powered full-stack web application that allows users to submit code snippets and receive intelligent feedback using LLM integration.
 
 Built using Flask, SQLAlchemy, Bootstrap, and Gemini API.
-# 🔐 Secure AI Code Review System
-
-An AI-powered full-stack web application that allows users to submit code snippets and receive intelligent feedback using LLM integration.
-
-Built using Flask, SQLAlchemy, Bootstrap, and Gemini API.
 
 ---
 
