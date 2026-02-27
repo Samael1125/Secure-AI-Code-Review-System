@@ -21,5 +21,6 @@ class CodeSnippet(db.Model):
 class Review(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     feedback = db.Column(db.Text, nullable=False)
+    rating = db.Column(db.Float)   # NEW
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     snippet_id = db.Column(db.Integer, db.ForeignKey('code_snippet.id'))

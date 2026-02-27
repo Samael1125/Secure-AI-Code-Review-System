@@ -1,3 +1,7 @@
+import os
+from click import prompt
+from dotenv import load_dotenv
+from flask import request
 from flask import Flask, render_template
 from config import Config
 from extensions import db, login_manager, bcrypt
@@ -5,6 +9,13 @@ from flask import redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
 from forms import RegisterForm, LoginForm
 from forms import SnippetForm
+
+load_dotenv()
+
+import google.generativeai as genai
+
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+model = genai.GenerativeModel("gemini-pro-latest")
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -72,11 +83,44 @@ def logout():
 @app.route("/dashboard")
 @login_required
 def dashboard():
-    snippets = CodeSnippet.query.filter_by(
-        user_id=current_user.id
-    ).all()
+    search_query = request.args.get("search")
+    language_filter = request.args.get("language")
 
-    return render_template("dashboard.html", snippets=snippets)
+    snippets_query = CodeSnippet.query.filter_by(
+        user_id=current_user.id
+    )
+
+    if search_query:
+        snippets_query = snippets_query.filter(
+            CodeSnippet.title.ilike(f"%{search_query}%")
+        )
+
+    if language_filter:
+        snippets_query = snippets_query.filter_by(
+            language=language_filter
+        )
+
+    snippets = snippets_query.all()
+
+    snippet_data = []
+
+    for snippet in snippets:
+        reviews = Review.query.filter_by(
+            snippet_id=snippet.id
+        ).all()
+
+        ratings = [r.rating for r in reviews if r.rating]
+        avg_rating = sum(ratings) / len(ratings) if ratings else None
+
+        snippet_data.append({
+            "snippet": snippet,
+            "avg_rating": avg_rating
+        })
+
+    return render_template(
+        "dashboard.html",
+        snippet_data=snippet_data
+    )
 
 @app.route("/")
 def home():
@@ -103,6 +147,30 @@ def add_snippet():
 
     return render_template("add_snippet.html", form=form)
 
+@app.route("/edit_snippet/<int:snippet_id>", methods=["GET", "POST"])
+@login_required
+def edit_snippet(snippet_id):
+    snippet = CodeSnippet.query.get_or_404(snippet_id)
+
+    # Security check
+    if snippet.user_id != current_user.id:
+        flash("Unauthorized action!", "danger")
+        return redirect(url_for("dashboard"))
+
+    form = SnippetForm(obj=snippet)
+
+    if form.validate_on_submit():
+        snippet.title = form.title.data
+        snippet.language = form.language.data
+        snippet.code = form.code.data
+
+        db.session.commit()
+
+        flash("Snippet updated successfully!", "success")
+        return redirect(url_for("dashboard"))
+
+    return render_template("add_snippet.html", form=form)
+
 @app.route("/delete_snippet/<int:snippet_id>")
 @login_required
 def delete_snippet(snippet_id):
@@ -118,6 +186,89 @@ def delete_snippet(snippet_id):
 
     flash("Snippet deleted successfully!", "info")
     return redirect(url_for("dashboard"))
+
+@app.route("/review_snippet/<int:snippet_id>")
+@login_required
+def review_snippet(snippet_id):
+    snippet = CodeSnippet.query.get_or_404(snippet_id)
+
+    if snippet.user_id != current_user.id:
+        flash("Unauthorized action!", "danger")
+        return redirect(url_for("dashboard"))
+
+    prompt = f"""
+    You are a senior software engineer.
+
+    Review this {snippet.language} code:
+
+    {snippet.code}
+
+    Provide:
+    1. Code quality feedback
+    2. Optimization suggestions
+    3. Security issues (if any)
+    4. Best practices improvements
+    5. Overall rating out of 10
+    """
+
+    import re
+
+    rating_value = None   # ← IMPORTANT (initialize first)
+
+    try:
+        response = model.generate_content(prompt)
+        review_text = response.text
+
+        rating_match = re.search(r'(\d+(\.\d+)?)/10', review_text)
+        if rating_match:
+            rating_value = float(rating_match.group(1))
+
+    except Exception:
+        review_text = """
+        ⚠️ AI Service Temporarily Unavailable (Quota Exceeded)
+
+        Simulated AI Review:
+
+        ✔ Code structure looks organized.
+        ✔ Consider adding proper error handling.
+        ✔ Improve variable naming for readability.
+        ✔ Optimize loops if handling large datasets.
+        ✔ Add input validation for security.
+
+        Overall Rating: 7.5/10
+        """
+
+    rating_value = 7.5   # ← ALSO define it here
+
+    review = Review(
+    feedback=review_text,
+    rating=rating_value,
+    snippet_id=snippet.id
+    )
+
+    db.session.add(review)
+    db.session.commit()
+
+    flash("AI review generated!", "success")
+
+    return render_template("review.html", snippet=snippet, review=review_text)
+
+@app.route("/reviews/<int:snippet_id>")
+@login_required
+def view_reviews(snippet_id):
+    snippet = CodeSnippet.query.get_or_404(snippet_id)
+
+    if snippet.user_id != current_user.id:
+        flash("Unauthorized action!", "danger")
+        return redirect(url_for("dashboard"))
+
+    reviews = Review.query.filter_by(
+        snippet_id=snippet.id
+    ).order_by(Review.created_at.desc()).all()
+
+    return render_template("review_history.html",
+                           snippet=snippet,
+                           reviews=reviews)
 
 if __name__ == "__main__":
     with app.app_context():

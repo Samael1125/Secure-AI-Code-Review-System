@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>{{ snippet.title }} - Review History</h2>
+<hr>
+
+{% if reviews %}
+    {% for review in reviews %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <small class="text-muted">
+                    {{ review.created_at }}
+                </small>
+                <pre class="bg-light p-3 mt-2">
+{{ review.feedback }}
+                </pre>
+            </div>
+        </div>
+    {% endfor %}
+{% else %}
+    <p>No reviews yet.</p>
+{% endif %}
+
+<a href="{{ url_for('dashboard') }}" class="btn btn-secondary mt-3">
+    Back
+</a>
+
+{% endblock %}
