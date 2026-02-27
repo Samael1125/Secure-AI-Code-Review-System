@@ -1,48 +1,64 @@
-# Secure-AI-Code-Review-System
-Secure AI-powered Code Review Assistant built using Flask, SQLAlchemy, SQLite, Bootstrap, and OpenAI API.
+# 🔐 Secure AI Code Review System
+
+An AI-powered full-stack web application that allows users to submit code snippets and receive intelligent feedback using LLM integration.
+
+Built using Flask, SQLAlchemy, Bootstrap, and Gemini API.
 
 ---
 
 ## 🚀 Features
 
-- User Registration & Login (Session-based Authentication)
-- Secure Password Hashing (bcrypt)
-- Create, Read, Update, Delete (CRUD) Code Snippets
-- AI-Based Code Review using LLM
-- Review History Storage
-- Clean Bootstrap UI
-- SQLite Database Integration
+### 🔑 Authentication
+- User Registration & Login
+- Password hashing (Flask-Bcrypt)
+- Secure session management
+- Protected routes
+
+### 📦 Snippet Management (Full CRUD)
+- Add code snippets
+- Edit snippets
+- Delete snippets
+- View snippet history
+- User-based data isolation
+
+### 🤖 AI Code Review
+- LLM-powered code review (Gemini API)
+- Intelligent prompt-based analysis
+- Extracted rating system (e.g., 8.5/10)
+- Review history tracking
+- Graceful fallback if AI quota exceeded
+
+### 📊 Analytics
+- Average rating per snippet
+- Rating badges on dashboard
+- Search by title
+- Filter by programming language
+
+### 🎨 UI/UX
+- Responsive Bootstrap interface
+- Flash messages
+- Confirmation prompts
+- Clean dashboard layout
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠 Tech Stack
 
-- Python
-- Flask
-- Flask-Login (Authentication)
-- Flask-SQLAlchemy (ORM)
-- SQLite
-- Bootstrap 5
-- OpenAI API
+| Layer        | Technology |
+|--------------|------------|
+| Backend      | Flask |
+| Database     | SQLite + SQLAlchemy |
+| Authentication | Flask-Login + Bcrypt |
+| Forms        | Flask-WTF |
+| Frontend     | HTML, Bootstrap |
+| AI Integration | Gemini API |
+| Version Control | Git + GitHub |
 
 ---
 
-## 📂 Project Structure
-Secure_AI_Code_Review_System/
-│
-├── app.py
-├── models.py
-├── forms.py
-├── config.py
-├── .env
-│
-├── templates/
-│ ├── base.html
-│ ├── login.html
-│ ├── register.html
-│ ├── dashboard.html
-│ ├── add_snippet.html
-│ ├── review.html
-│
-├── static/
-│ └── style.css
+## ⚙️ Installation & Setup
+
+### 1️⃣ Clone the repository
+```bash
+git clone https://github.com/YOUR_USERNAME/Secure-AI-Code-Review-System.git
+cd Secure-AI-Code-Review-System
